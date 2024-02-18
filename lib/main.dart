@@ -292,10 +292,15 @@ class ContentWidgetSate extends State<ContentRowWidget> {
         GestureDetector(
           onTap: () {
             if (task.status == TaskStatus.wait) {
-              widget.service.update(task);
               setState(() {
                 task.status = TaskStatus.finish;
+                widget.service.update(task);
               });
+            } else {
+              setState(() {
+                task.status = TaskStatus.wait;
+              });
+              widget.service.update(task);
             }
           },
           child: task.status == TaskStatus.wait
@@ -311,12 +316,32 @@ class ContentWidgetSate extends State<ContentRowWidget> {
         const SizedBox(
           width: 10,
         ),
-        Expanded(child: Text(task.content ?? "")),
+        Expanded(
+          child: Text(
+            task.content ?? "",
+            style: const TextStyle(fontSize: 12),
+          ),
+        ),
         const SizedBox(
           width: 10,
         ),
-        Text(date_format.formatDate(task.createdTime!,
-            [date_format.yyyy, '-', date_format.mm, '-', date_format.dd, ' ', date_format.HH, ':', date_format.nn])),
+        Text(
+          task.createdTime!.year == DateTime.now().year
+              ? date_format.formatDate(
+                  task.createdTime!, [date_format.mm, '-', date_format.dd, ' ', date_format.HH, ':', date_format.nn])
+              : date_format.formatDate(task.createdTime!, [
+                  date_format.yyyy,
+                  '-',
+                  date_format.mm,
+                  '-',
+                  date_format.dd,
+                  ' ',
+                  date_format.HH,
+                  ':',
+                  date_format.nn
+                ]),
+          style: const TextStyle(fontSize: 12),
+        ),
         const SizedBox(
           width: 10,
         ),
