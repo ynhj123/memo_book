@@ -317,13 +317,19 @@ class ContentWidgetSate extends State<ContentRowWidget> {
           width: 10,
         ),
         Expanded(
-          child: Text(
-            task.content ?? "",
-            style: const TextStyle(fontSize: 12),
+          child: InkWell(
+            onTap: () {
+              debugPrint("show detail");
+              _showAlertDialog(task);
+            },
+            child: Text(
+              task.content ?? "",
+              style: const TextStyle(fontSize: 12),
+            ),
           ),
         ),
         const SizedBox(
-          width: 10,
+          width: 5,
         ),
         Text(
           task.createdTime!.year == DateTime.now().year
@@ -346,6 +352,44 @@ class ContentWidgetSate extends State<ContentRowWidget> {
           width: 10,
         ),
       ],
+    );
+  }
+
+  Future<void> _showAlertDialog(WtcTask task) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(
+                  task.content ?? "",
+                  style: const TextStyle(fontSize: 12),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                Text(
+                  date_format.formatDate(task.createdTime!, [
+                    date_format.yyyy,
+                    '-',
+                    date_format.mm,
+                    '-',
+                    date_format.dd,
+                    ' ',
+                    date_format.HH,
+                    ':',
+                    date_format.nn
+                  ]),
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
