@@ -49,6 +49,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
   flutter_launcher_icons: ^0.13.1
+  flutter_smart_dialog: ^4.0.9+5
 flutter_icons:
   image_path_android: "resources/images/icon.png"
   android: true

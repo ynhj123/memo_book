@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:sqflite/sqflite.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
 const String tableWtcTask = 'wtc_task';
 const String columnId = '_id';
@@ -55,28 +56,36 @@ class WtcTaskService {
   Future close() async {}
 
   Future<WtcTask> insert(WtcTask task) async {
-    await wtcTaskProvider.open(path);
+    await wtcTaskProvider.open(path).onError((error, stackTrace) {
+      SmartDialog.showToast("open table error", displayTime: const Duration(seconds: 3));
+    });
     task = await wtcTaskProvider.insert(task);
     await wtcTaskProvider.close();
     return task;
   }
 
   Future<int> delete(int id) async {
-    await wtcTaskProvider.open(path);
+    await wtcTaskProvider.open(path).onError((error, stackTrace) {
+      SmartDialog.showToast("open table error", displayTime: const Duration(seconds: 3));
+    });
     int result = await wtcTaskProvider.delete(id);
     await wtcTaskProvider.close();
     return result;
   }
 
   Future<WtcTask> update(WtcTask task) async {
-    await wtcTaskProvider.open(path);
+    await wtcTaskProvider.open(path).onError((error, stackTrace) {
+      SmartDialog.showToast("open table error", displayTime: const Duration(seconds: 3));
+    });
     await wtcTaskProvider.update(task);
     await wtcTaskProvider.close();
     return task;
   }
 
   Future<List<WtcTask>?> listWtcTask(int pageNum, int pageSize, int? status) async {
-    await wtcTaskProvider.open(path);
+    await wtcTaskProvider.open(path).onError((error, stackTrace) {
+      SmartDialog.showToast("open table error", displayTime: const Duration(seconds: 3));
+    });
     List<WtcTask>? list = await wtcTaskProvider.listWtcTask(pageNum, pageSize, status);
     await wtcTaskProvider.close();
     return list;
@@ -127,7 +136,7 @@ create table $tableWtcTask (
       maps = await db.query(tableWtcTask,
           columns: [columnId, columnContent, columnCreatedTime, columnStatus, columnSeq],
           where: "$columnStatus = ?",
-          whereArgs: [status!],
+          whereArgs: [status],
           orderBy: "$columnId desc",
           limit: pageSize,
           offset: (pageNum - 1) * pageSize);

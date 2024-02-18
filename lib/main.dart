@@ -4,6 +4,7 @@ import 'package:date_format/date_format.dart' as date_format;
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:memo_book/task.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,6 +18,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
+      navigatorObservers: [FlutterSmartDialog.observer],
+      // here
+      builder: FlutterSmartDialog.init(),
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
