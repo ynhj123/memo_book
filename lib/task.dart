@@ -1,7 +1,7 @@
 import 'dart:developer';
 
-import 'package:sqflite/sqflite.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:sqflite/sqflite.dart';
 
 const String tableWtcTask = 'wtc_task';
 const String columnId = '_id';
@@ -9,24 +9,35 @@ const String columnContent = 'content';
 const String columnCreatedTime = 'createdTime';
 const String columnStatus = 'status';
 const String columnSeq = 'seq';
+const String columnGroupId = 'groupId';
+const int versionWtcTask = 2;
 
 class WtcTask {
   WtcTask(
-      {required this.id, required this.content, required this.createdTime, required this.status, required this.seq});
+      {required this.id,
+      required this.content,
+      required this.createdTime,
+      required this.status,
+      required this.seq,
+      this.groupId});
 
   int? id;
   String? content;
   DateTime? createdTime;
   TaskStatus? status;
   int? seq;
+  int? groupId;
 
   Map<String, Object?> toMap() {
     var map = <String, Object?>{
       columnContent: content,
       columnCreatedTime: createdTime!.millisecondsSinceEpoch,
       columnStatus: status!.index,
-      columnSeq: seq
+      columnSeq: seq,
     };
+    if (groupId != null) {
+      map[columnGroupId] = groupId;
+    }
     if (id != null) {
       map[columnId] = id;
     }
@@ -39,6 +50,7 @@ class WtcTask {
     createdTime = DateTime.fromMillisecondsSinceEpoch(map[columnCreatedTime] as int);
     status = TaskStatus.values[map[columnStatus] as int];
     seq = map[columnSeq] as int?;
+    groupId = map[columnGroupId] as int?;
   }
 }
 
@@ -48,46 +60,36 @@ enum TaskStatus {
 }
 
 class WtcTaskService {
-  final String path = "wtc";
+  final String path = "wtc.db";
   WtcTaskProvider wtcTaskProvider = WtcTaskProvider();
 
-  Future open() async {}
-
-  Future close() async {}
-
-  Future<WtcTask> insert(WtcTask task) async {
+  Future open() async {
     await wtcTaskProvider.open(path).onError((error, stackTrace) {
       SmartDialog.showToast("open table error", displayTime: const Duration(seconds: 3));
     });
-    task = await wtcTaskProvider.insert(task);
+  }
+
+  Future close() async {
     await wtcTaskProvider.close();
+  }
+
+  Future<WtcTask> insert(WtcTask task) async {
+    task = await wtcTaskProvider.insert(task);
     return task;
   }
 
   Future<int> delete(int id) async {
-    await wtcTaskProvider.open(path).onError((error, stackTrace) {
-      SmartDialog.showToast("open table error", displayTime: const Duration(seconds: 3));
-    });
     int result = await wtcTaskProvider.delete(id);
-    await wtcTaskProvider.close();
     return result;
   }
 
   Future<WtcTask> update(WtcTask task) async {
-    await wtcTaskProvider.open(path).onError((error, stackTrace) {
-      SmartDialog.showToast("open table error", displayTime: const Duration(seconds: 3));
-    });
     await wtcTaskProvider.update(task);
-    await wtcTaskProvider.close();
     return task;
   }
 
-  Future<List<WtcTask>?> listWtcTask(int pageNum, int pageSize, int? status) async {
-    await wtcTaskProvider.open(path).onError((error, stackTrace) {
-      SmartDialog.showToast("open table error", displayTime: const Duration(seconds: 3));
-    });
-    List<WtcTask>? list = await wtcTaskProvider.listWtcTask(pageNum, pageSize, status);
-    await wtcTaskProvider.close();
+  Future<List<WtcTask>?> listWtcTask(int pageNum, int pageSize, int? status, int? groupId) async {
+    List<WtcTask>? list = await wtcTaskProvider.listWtcTask(pageNum, pageSize, status, groupId);
     return list;
   }
 }
@@ -95,16 +97,18 @@ class WtcTaskService {
 class WtcTaskProvider {
   late Database db;
 
-  Future open(String path) async {
-    db = await openDatabase(path, version: 1, onCreate: (Database db, int version) async {
+  Future open(String dbpath) async {
+    String path = "${await getDatabasesPath()}/$dbpath";
+    db = await openDatabase(path, version: versionWtcTask, onCreate: (Database db, int version) async {
       await db.execute('''
-create table $tableWtcTask ( 
-  $columnId integer primary key autoincrement, 
-  $columnContent text not null,
-  $columnCreatedTime integer not null,
-  $columnStatus integer not null,
-  $columnSeq integer not null)
-''');
+          create table $tableWtcTask ( 
+            $columnId integer primary key autoincrement, 
+            $columnContent text not null,
+            $columnCreatedTime integer not null,
+            $columnStatus integer not null,
+            $columnSeq integer not null,
+            $columnGroupId integer)
+          ''');
     });
   }
 
@@ -124,19 +128,35 @@ create table $tableWtcTask (
     return null;
   }
 
-  Future<List<WtcTask>?> listWtcTask(int pageNum, int pageSize, int? status) async {
+  Future<List<WtcTask>?> listWtcTask(int pageNum, int pageSize, int? status, int? groupId) async {
     List<Map<String, Object?>> maps;
-    if (status == null) {
+    if (status == null && groupId == null) {
       maps = await db.query(tableWtcTask,
           columns: [columnId, columnContent, columnCreatedTime, columnStatus, columnSeq],
+          orderBy: "$columnId desc",
+          limit: pageSize,
+          offset: (pageNum - 1) * pageSize);
+    } else if (status != null && groupId == null) {
+      maps = await db.query(tableWtcTask,
+          columns: [columnId, columnContent, columnCreatedTime, columnStatus, columnSeq],
+          where: "$columnStatus = ?",
+          whereArgs: [status],
+          orderBy: "$columnId desc",
+          limit: pageSize,
+          offset: (pageNum - 1) * pageSize);
+    } else if (status == null && groupId != null) {
+      maps = await db.query(tableWtcTask,
+          columns: [columnId, columnContent, columnCreatedTime, columnStatus, columnSeq],
+          where: "$columnGroupId = ?",
+          whereArgs: [groupId],
           orderBy: "$columnId desc",
           limit: pageSize,
           offset: (pageNum - 1) * pageSize);
     } else {
       maps = await db.query(tableWtcTask,
           columns: [columnId, columnContent, columnCreatedTime, columnStatus, columnSeq],
-          where: "$columnStatus = ?",
-          whereArgs: [status],
+          where: "$columnGroupId = ? and $columnStatus = ?",
+          whereArgs: [groupId, status],
           orderBy: "$columnId desc",
           limit: pageSize,
           offset: (pageNum - 1) * pageSize);

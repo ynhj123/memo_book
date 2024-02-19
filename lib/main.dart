@@ -3,8 +3,9 @@ import 'dart:developer';
 import 'package:date_format/date_format.dart' as date_format;
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:memo_book/task.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:memo_book/group.dart';
+import 'package:memo_book/task.dart';
 
 void main() {
   runApp(const MyApp());
@@ -40,18 +41,32 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   List<WtcTask> tasks = [];
+  List<WtcGroup> groups = [WtcGroup(id: 0, name: "全部", seq: 1)];
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _contentController = TextEditingController();
   final WtcTaskService wtcTaskService = WtcTaskService();
+  final WtcGroupService wtcGroupService = WtcGroupService();
   int pageNum = 1;
   final int pageSize = 13;
   bool hasNextPage = true;
   TaskStatus? filterStatus = TaskStatus.wait;
+  int? curGroup;
+  bool editGroup = false;
 
   @override
   void initState() {
     super.initState();
-    initData();
+    wtcTaskService.open().then((value) => initData());
+    wtcGroupService.open().then((value) => initGroupData());
+  }
+
+  initGroupData() async {
+    List<WtcGroup>? result = await wtcGroupService.listWtcGroup();
+    if (result != null) {
+      setState(() {
+        groups.addAll(result);
+      });
+    }
   }
 
   Future initData() async {
@@ -74,8 +89,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   flushData() async {
-    List<WtcTask>? result =
-        await wtcTaskService.listWtcTask(pageNum, pageSize, filterStatus == null ? null : filterStatus!.index);
+    List<WtcTask>? result = await wtcTaskService.listWtcTask(
+        pageNum, pageSize, filterStatus == null ? null : filterStatus!.index, curGroup);
     if (result != null) {
       if (result.length < pageSize) {
         hasNextPage = false;
@@ -91,6 +106,8 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
     _scrollController.dispose();
     _contentController.dispose();
+    wtcTaskService.close();
+    wtcGroupService.close();
   }
 
   @override
@@ -139,6 +156,73 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
+            const SizedBox(
+              height: 5,
+            ),
+            GestureDetector(
+              onLongPress: () {
+                setState(() {
+                  editGroup = true;
+                });
+              },
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Expanded(
+                      child: ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemCount: groups.length,
+                          itemExtent: 30,
+                          itemBuilder: (context, index) {
+                            WtcGroup group = groups[index];
+                            return InkWell(
+                              onTap: () {
+                                setState(() {
+                                  if (index == 0) {
+                                    curGroup = null;
+                                  } else {
+                                    curGroup = group.id;
+                                  }
+                                  resetData();
+                                });
+                              },
+                              child: Text(
+                                group.name ?? "",
+                                style: TextStyle(
+                                    fontSize: 16, color: ((curGroup ?? 0) == group.id) ? Colors.black : Colors.grey),
+                              ),
+                            );
+                          })),
+                  Visibility(
+                      visible: editGroup,
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () {},
+                            icon: const Icon(Icons.add),
+                          ),
+                          const SizedBox(
+                            width: 5,
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                editGroup = false;
+                              });
+                            },
+                            icon: const Icon(Icons.close),
+                          ),
+                        ],
+                      )),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                ],
+              ),
+            ),
             Expanded(
               child: Align(
                 // 此处为关键代码
@@ -231,7 +315,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
                       int id = tasks.isEmpty ? 1 : tasks.first.id! + 1;
                       WtcTask task = WtcTask(
-                          id: id, content: content, createdTime: DateTime.now(), status: TaskStatus.wait, seq: id);
+                          id: id,
+                          content: content,
+                          createdTime: DateTime.now(),
+                          status: TaskStatus.wait,
+                          seq: id,
+                          groupId: curGroup);
                       wtcTaskService.insert(task);
                       setState(() {
                         tasks.insert(0, task);
