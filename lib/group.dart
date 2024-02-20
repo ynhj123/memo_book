@@ -1,13 +1,20 @@
 import 'dart:developer';
 
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:memo_book/sql_helper.dart';
 import 'package:sqflite/sqflite.dart';
 
 const String tableWtcGroup = 'wtc_group';
 const String columnId = '_id';
 const String columnName = 'name';
 const String columnSeq = 'seq';
-const int versionWtcGroup = 1;
+
+const String createTableGroupSql = '''
+          create table $tableWtcGroup ( 
+            $columnId integer primary key autoincrement, 
+            $columnName text not null,
+            $columnSeq integer not null)
+          ''';
 
 class WtcGroup {
   WtcGroup({required this.id, required this.name, required this.seq});
@@ -33,11 +40,10 @@ class WtcGroup {
 }
 
 class WtcGroupService {
-  final String path = "wtc.db";
   WtcGroupProvider wtcGroupProvider = WtcGroupProvider();
 
   Future open() async {
-    await wtcGroupProvider.open(path).onError((error, stackTrace) {
+    await wtcGroupProvider.open().onError((error, stackTrace) {
       SmartDialog.showToast("open table error", displayTime: const Duration(seconds: 3));
     });
   }
@@ -65,21 +71,17 @@ class WtcGroupService {
     List<WtcGroup>? list = await wtcGroupProvider.listWtcGroup();
     return list;
   }
+
+  Future<int> queryMaxId() async {
+    return await wtcGroupProvider.maxId();
+  }
 }
 
 class WtcGroupProvider {
   late Database db;
 
-  Future open(String dbpath) async {
-    String path = "${await getDatabasesPath()}/$dbpath";
-    db = await openDatabase(path, version: versionWtcGroup, onCreate: (Database db, int version) async {
-      await db.execute('''
-          create table $tableWtcGroup ( 
-            $columnId integer primary key autoincrement, 
-            $columnName text not null,
-            $columnSeq integer not null)
-          ''');
-    });
+  Future open() async {
+    db = await DBHelper().database;
   }
 
   Future<WtcGroup> insert(WtcGroup group) async {
@@ -115,6 +117,15 @@ class WtcGroupProvider {
 
   Future<int> update(WtcGroup group) async {
     return await db.update(tableWtcGroup, group.toMap(), where: '$columnId = ?', whereArgs: [group.id]);
+  }
+
+  Future<int> maxId() async {
+    List<Map<String, Object?>> result = await db.rawQuery('SELECT MAX($columnId) as maxId FROM $tableWtcGroup');
+    for (var element in result) {
+      log("$element");
+    }
+    int maxId = result.isNotEmpty ? (result.first['maxId'] ?? 0) as int : 0;
+    return maxId;
   }
 
   Future close() async => db.close();

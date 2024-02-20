@@ -41,7 +41,9 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   List<WtcTask> tasks = [];
-  List<WtcGroup> groups = [WtcGroup(id: 0, name: "全部", seq: 1)];
+  List<WtcGroup> groups = [
+    WtcGroup(id: 0, name: "全部", seq: 0),
+  ];
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _contentController = TextEditingController();
   final WtcTaskService wtcTaskService = WtcTaskService();
@@ -156,71 +158,123 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            const SizedBox(
-              height: 5,
-            ),
             GestureDetector(
               onLongPress: () {
                 setState(() {
                   editGroup = true;
                 });
               },
-              child: Row(
-                children: [
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  Expanded(
-                      child: ListView.builder(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          itemCount: groups.length,
-                          itemExtent: 30,
-                          itemBuilder: (context, index) {
-                            WtcGroup group = groups[index];
-                            return InkWell(
+              child: SizedBox(
+                height: 30,
+                child: Row(
+                  children: [
+                    const SizedBox(
+                      width: 5,
+                    ),
+                    const Text(
+                      "分组：",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    ),
+                    Expanded(
+                        child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: groups.length,
+                      itemBuilder: (context, index) {
+                        WtcGroup group = groups[index];
+                        return InkWell(
+                          onTap: () {
+                            log("group: ${group.id ?? 0}");
+                            if (editGroup) {
+                              if (group.id != 0) {
+                                wtcGroupService.delete(group.id!).then((value) {
+                                  setState(() {
+                                    groups.removeAt(index);
+                                  });
+                                });
+                              }
+                            } else {
+                              setState(() {
+                                if (group.id == 0) {
+                                  curGroup = null;
+                                } else {
+                                  curGroup = group.id;
+                                }
+                                log("curGroup: $curGroup");
+                                resetData();
+                              });
+                            }
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: Colors.white54,
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x1F000000),
+                                  blurRadius: 12,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  group.name ?? "",
+                                  style: TextStyle(
+                                      fontSize: 16, color: ((curGroup ?? 0) == group.id) ? Colors.black : Colors.grey),
+                                ),
+                                Visibility(
+                                    visible: editGroup && group.id != 0,
+                                    child: const Padding(
+                                      padding: EdgeInsets.only(left: 5),
+                                      child: Text(
+                                        "-",
+                                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                      ),
+                                    )),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                      separatorBuilder: (BuildContext context, int index) {
+                        return const SizedBox(
+                          width: 5,
+                        );
+                      },
+                    )),
+                    Visibility(
+                        visible: editGroup,
+                        child: Row(
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                _showAddGroupDialog(() {
+                                  setState(() {});
+                                });
+                              },
+                              child: const Icon(Icons.add),
+                            ),
+                            const SizedBox(
+                              width: 8,
+                            ),
+                            InkWell(
                               onTap: () {
                                 setState(() {
-                                  if (index == 0) {
-                                    curGroup = null;
-                                  } else {
-                                    curGroup = group.id;
-                                  }
+                                  editGroup = false;
+                                  curGroup = null;
                                   resetData();
                                 });
                               },
-                              child: Text(
-                                group.name ?? "",
-                                style: TextStyle(
-                                    fontSize: 16, color: ((curGroup ?? 0) == group.id) ? Colors.black : Colors.grey),
-                              ),
-                            );
-                          })),
-                  Visibility(
-                      visible: editGroup,
-                      child: Row(
-                        children: [
-                          IconButton(
-                            onPressed: () {},
-                            icon: const Icon(Icons.add),
-                          ),
-                          const SizedBox(
-                            width: 5,
-                          ),
-                          IconButton(
-                            onPressed: () {
-                              setState(() {
-                                editGroup = false;
-                              });
-                            },
-                            icon: const Icon(Icons.close),
-                          ),
-                        ],
-                      )),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                ],
+                              child: const Icon(Icons.save),
+                            )
+                          ],
+                        )),
+                    const SizedBox(
+                      width: 10,
+                    ),
+                  ],
+                ),
               ),
             ),
             Expanded(
@@ -313,20 +367,22 @@ class _MyHomePageState extends State<MyHomePage> {
                         return;
                       }
 
-                      int id = tasks.isEmpty ? 1 : tasks.first.id! + 1;
-                      WtcTask task = WtcTask(
-                          id: id,
-                          content: content,
-                          createdTime: DateTime.now(),
-                          status: TaskStatus.wait,
-                          seq: id,
-                          groupId: curGroup);
-                      wtcTaskService.insert(task);
-                      setState(() {
-                        tasks.insert(0, task);
-                        _contentController.text = "";
-                        FocusScope.of(context).requestFocus(FocusNode());
-                        hrefTop();
+                      wtcTaskService.queryMaxId().then((maxId) {
+                        int id = maxId + 1;
+                        WtcTask task = WtcTask(
+                            id: id,
+                            content: content,
+                            createdTime: DateTime.now(),
+                            status: TaskStatus.wait,
+                            seq: id,
+                            groupId: curGroup);
+                        wtcTaskService.insert(task);
+                        setState(() {
+                          tasks.insert(0, task);
+                          _contentController.text = "";
+                          FocusScope.of(context).requestFocus(FocusNode());
+                          hrefTop();
+                        });
                       });
                     },
                     child: const Icon(
@@ -346,6 +402,53 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _showAddGroupDialog(Function saveBack) async {
+    String editedValue = '';
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('添加组'),
+          content: SingleChildScrollView(
+              child: Column(
+            children: <Widget>[
+              TextField(
+                decoration: const InputDecoration(labelText: '请输入组名'),
+                onChanged: (value) {
+                  editedValue = value;
+                },
+              ),
+            ],
+          )),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Handle the edited value here, for example, you can print it
+                wtcGroupService.queryMaxId().then((maxId) {
+                  int id = maxId + 1;
+                  var data = WtcGroup(id: id, name: editedValue, seq: id);
+                  wtcGroupService.insert(data).then((value) {
+                    groups.add(data);
+                    saveBack.call();
+                    Navigator.of(context).pop();
+                  });
+                });
+              },
+              child: const Text('保存'),
+            ),
+          ],
+          // Adjust the contentPadding to center the content
+        );
+      },
     );
   }
 

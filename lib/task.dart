@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:memo_book/sql_helper.dart';
 import 'package:sqflite/sqflite.dart';
 
 const String tableWtcTask = 'wtc_task';
@@ -10,7 +11,15 @@ const String columnCreatedTime = 'createdTime';
 const String columnStatus = 'status';
 const String columnSeq = 'seq';
 const String columnGroupId = 'groupId';
-const int versionWtcTask = 2;
+const String createTableTaskSql = '''
+          create table $tableWtcTask ( 
+            $columnId integer primary key autoincrement, 
+            $columnContent text not null,
+            $columnCreatedTime integer not null,
+            $columnStatus integer not null,
+            $columnSeq integer not null,
+            $columnGroupId integer)
+          ''';
 
 class WtcTask {
   WtcTask(
@@ -41,6 +50,7 @@ class WtcTask {
     if (id != null) {
       map[columnId] = id;
     }
+    log("$map");
     return map;
   }
 
@@ -60,11 +70,10 @@ enum TaskStatus {
 }
 
 class WtcTaskService {
-  final String path = "wtc.db";
   WtcTaskProvider wtcTaskProvider = WtcTaskProvider();
 
   Future open() async {
-    await wtcTaskProvider.open(path).onError((error, stackTrace) {
+    await wtcTaskProvider.open().onError((error, stackTrace) {
       SmartDialog.showToast("open table error", displayTime: const Duration(seconds: 3));
     });
   }
@@ -92,24 +101,17 @@ class WtcTaskService {
     List<WtcTask>? list = await wtcTaskProvider.listWtcTask(pageNum, pageSize, status, groupId);
     return list;
   }
+
+  Future<int> queryMaxId() async {
+    return await wtcTaskProvider.maxId();
+  }
 }
 
 class WtcTaskProvider {
   late Database db;
 
-  Future open(String dbpath) async {
-    String path = "${await getDatabasesPath()}/$dbpath";
-    db = await openDatabase(path, version: versionWtcTask, onCreate: (Database db, int version) async {
-      await db.execute('''
-          create table $tableWtcTask ( 
-            $columnId integer primary key autoincrement, 
-            $columnContent text not null,
-            $columnCreatedTime integer not null,
-            $columnStatus integer not null,
-            $columnSeq integer not null,
-            $columnGroupId integer)
-          ''');
-    });
+  Future open() async {
+    db = await DBHelper().database;
   }
 
   Future<WtcTask> insert(WtcTask task) async {
@@ -173,6 +175,12 @@ class WtcTaskProvider {
 
   Future<int> update(WtcTask task) async {
     return await db.update(tableWtcTask, task.toMap(), where: '$columnId = ?', whereArgs: [task.id]);
+  }
+
+  Future<int> maxId() async {
+    List<Map<String, dynamic>> result = await db.rawQuery('SELECT MAX($columnId) as maxId FROM $tableWtcTask');
+    int maxId = result.isNotEmpty ? (result.first['maxId'] ?? 0) as int : 0;
+    return maxId;
   }
 
   Future close() async => db.close();
