@@ -115,330 +115,329 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        actions: [
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                if (filterStatus == null) {
-                  filterStatus = TaskStatus.wait;
-                } else {
-                  filterStatus = null;
-                }
-              });
-              resetData();
-            },
-            child: Row(
-              children: [
-                filterStatus == null
-                    ? const Icon(Icons.switch_left)
-                    : const Icon(
-                        Icons.switch_right,
-                        color: Colors.red,
-                      ),
-                const SizedBox(
-                  width: 10,
-                ),
-                filterStatus == null
-                    ? const Text("全部")
-                    : const Text(
-                        "待办",
-                        style: TextStyle(color: Colors.red),
-                      ),
-              ],
-            ),
-          ),
-          const SizedBox(
-            width: 10,
-          ),
-        ],
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: <Widget>[
-          GestureDetector(
-            onLongPress: () {
-              setState(() {
-                curGroup = null;
-                editGroup = true;
-              });
-            },
-            child: Container(
-              color: Colors.blue,
-              height: 30,
+        appBar: AppBar(
+          title: Text(widget.title),
+          actions: [
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  if (filterStatus == null) {
+                    filterStatus = TaskStatus.wait;
+                  } else {
+                    filterStatus = null;
+                  }
+                });
+                resetData();
+              },
               child: Row(
                 children: [
+                  filterStatus == null
+                      ? const Icon(Icons.switch_left)
+                      : const Icon(
+                          Icons.switch_right,
+                          color: Colors.red,
+                        ),
                   const SizedBox(
-                    width: 5,
+                    width: 10,
                   ),
-                  const Icon(
-                    Icons.grid_view,
-                    size: 18,
-                    color: Colors.white,
+                  filterStatus == null
+                      ? const Text("全部")
+                      : const Text(
+                          "待办",
+                          style: TextStyle(color: Colors.red),
+                        ),
+                ],
+              ),
+            ),
+            const SizedBox(
+              width: 10,
+            ),
+          ],
+        ),
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            GestureDetector(
+              onLongPress: () {
+                setState(() {
+                  curGroup = null;
+                  editGroup = true;
+                });
+              },
+              child: Container(
+                color: Colors.blue,
+                height: 30,
+                child: Row(
+                  children: [
+                    const SizedBox(
+                      width: 5,
+                    ),
+                    const Icon(
+                      Icons.grid_view,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                    const Text(
+                      "分组",
+                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                    const SizedBox(
+                      width: 10,
+                    ),
+                    Expanded(
+                        child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: groups.length,
+                      itemBuilder: (context, index) {
+                        WtcGroup group = groups[index];
+                        return InkWell(
+                          onTap: () {
+                            log("group: ${group.id ?? 0}");
+                            if (editGroup) {
+                              if (group.id != 0) {
+                                wtcGroupService.delete(group.id!).then((value) {
+                                  setState(() {
+                                    groups.removeAt(index);
+                                  });
+                                });
+                              }
+                            } else {
+                              setState(() {
+                                if (group.id == 0) {
+                                  curGroup = null;
+                                } else {
+                                  curGroup = group.id;
+                                }
+                                log("curGroup: $curGroup");
+                                resetData();
+                              });
+                            }
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  group.name ?? "",
+                                  style: TextStyle(
+                                      fontSize: ((curGroup ?? 0) == group.id) ? 18 : 16,
+                                      color: ((curGroup ?? 0) == group.id) ? Colors.white : Colors.white54,
+                                      fontWeight: ((curGroup ?? 0) == group.id) ? FontWeight.bold : FontWeight.normal),
+                                ),
+                                Visibility(
+                                    visible: editGroup && group.id != 0,
+                                    child: const Padding(
+                                      padding: EdgeInsets.only(left: 5),
+                                      child: Text(
+                                        "-",
+                                        style:
+                                            TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                                      ),
+                                    )),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                      separatorBuilder: (BuildContext context, int index) {
+                        return const SizedBox(
+                          width: 10,
+                        );
+                      },
+                    )),
+                    Visibility(
+                        visible: editGroup,
+                        child: Row(
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                _showAddGroupDialog(() {
+                                  setState(() {});
+                                });
+                              },
+                              child: const Icon(
+                                Icons.add,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 8,
+                            ),
+                            InkWell(
+                              onTap: () {
+                                setState(() {
+                                  editGroup = false;
+                                  curGroup = null;
+                                  resetData();
+                                });
+                              },
+                              child: const Icon(
+                                Icons.save,
+                                color: Colors.white,
+                              ),
+                            )
+                          ],
+                        )),
+                    const SizedBox(
+                      width: 10,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              child: Align(
+                // 此处为关键代码
+                alignment: Alignment.topCenter,
+                child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    controller: _scrollController,
+                    shrinkWrap: true,
+                    itemCount: tasks.length,
+                    itemExtent: 50,
+                    itemBuilder: (context, index) {
+                      WtcTask task = tasks[index];
+                      return Slidable(
+                        key: ValueKey(task.id),
+                        endActionPane: ActionPane(
+                          extentRatio: 0.2,
+                          motion: const ScrollMotion(),
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                log("edit");
+                                _showEditTaskDialog(task, () {
+                                  wtcTaskService.update(task).then((value) {
+                                    Slidable.of(context)?.close();
+                                    resetData();
+                                  });
+                                });
+                              },
+                              child: Container(
+                                width: 35,
+                                height: 40,
+                                decoration: const BoxDecoration(
+                                  color: Colors.lightBlue,
+                                  borderRadius: BorderRadius.all(Radius.circular(20)),
+                                ),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.edit_note,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 10,
+                            ),
+                            InkWell(
+                              onTap: () {
+                                log("del");
+                                wtcTaskService.delete(task.id!);
+                                setState(() {
+                                  tasks.removeAt(index);
+                                });
+                              },
+                              child: Container(
+                                width: 35,
+                                height: 40,
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.all(Radius.circular(20)),
+                                ),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.delete_forever,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        child: ContentRowWidget(
+                          task: task,
+                          service: wtcTaskService,
+                        ),
+                      );
+                    }),
+              ),
+            ),
+            Container(
+              height: 80,
+              margin: const EdgeInsets.only(left: 10, right: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(25),
+                color: Colors.white54,
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x1F000000),
+                    blurRadius: 12,
+                    spreadRadius: 1,
                   ),
-                  const Text(
-                    "分组",
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
+                ],
+              ),
+              child: Row(
+                children: [
                   const SizedBox(
                     width: 10,
                   ),
                   Expanded(
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: groups.length,
-                        itemBuilder: (context, index) {
-                          WtcGroup group = groups[index];
-                          return InkWell(
-                            onTap: () {
-                              log("group: ${group.id ?? 0}");
-                              if (editGroup) {
-                                if (group.id != 0) {
-                                  wtcGroupService.delete(group.id!).then((value) {
-                                    setState(() {
-                                      groups.removeAt(index);
-                                    });
-                                  });
-                                }
-                              } else {
-                                setState(() {
-                                  if (group.id == 0) {
-                                    curGroup = null;
-                                  } else {
-                                    curGroup = group.id;
-                                  }
-                                  log("curGroup: $curGroup");
-                                  resetData();
-                                });
-                              }
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    group.name ?? "",
-                                    style: TextStyle(
-                                        fontSize: ((curGroup ?? 0) == group.id) ? 18 : 16,
-                                        color: ((curGroup ?? 0) == group.id) ? Colors.white : Colors.white54,
-                                        fontWeight: ((curGroup ?? 0) == group.id) ? FontWeight.bold : FontWeight.normal),
-                                  ),
-                                  Visibility(
-                                      visible: editGroup && group.id != 0,
-                                      child: const Padding(
-                                        padding: EdgeInsets.only(left: 5),
-                                        child: Text(
-                                          "-",
-                                          style:
-                                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                                        ),
-                                      )),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                        separatorBuilder: (BuildContext context, int index) {
-                          return const SizedBox(
-                            width: 10,
-                          );
-                        },
-                      )),
-                  Visibility(
-                      visible: editGroup,
-                      child: Row(
-                        children: [
-                          InkWell(
-                            onTap: () {
-                              _showAddGroupDialog(() {
-                                setState(() {});
-                              });
-                            },
-                            child: const Icon(
-                              Icons.add,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(
-                            width: 8,
-                          ),
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                editGroup = false;
-                                curGroup = null;
-                                resetData();
-                              });
-                            },
-                            child: const Icon(
-                              Icons.save,
-                              color: Colors.white,
-                            ),
-                          )
-                        ],
-                      )),
+                      child: TextField(
+                    controller: _contentController,
+                    maxLines: 2,
+                    style: const TextStyle(fontSize: 16, color: Colors.black87),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      hintStyle: TextStyle(color: Color(0xFF666666)),
+                      hintText: "新的任务",
+                    ),
+                  )),
+                  const SizedBox(
+                    width: 20,
+                  ),
+                  InkWell(
+                    onTap: () {
+                      String content = _contentController.text;
+                      if (content.isEmpty) {
+                        return;
+                      }
+
+                      wtcTaskService.queryMaxId().then((maxId) {
+                        int id = maxId + 1;
+                        WtcTask task = WtcTask(
+                            id: id,
+                            content: content,
+                            createdTime: DateTime.now(),
+                            status: TaskStatus.wait,
+                            seq: id,
+                            groupId: curGroup);
+                        wtcTaskService.insert(task);
+                        setState(() {
+                          tasks.insert(0, task);
+                          _contentController.text = "";
+                          FocusScope.of(context).requestFocus(FocusNode());
+                          hrefTop();
+                        });
+                      });
+                    },
+                    child: const Icon(
+                      Icons.add,
+                      size: 50,
+                    ),
+                  ),
                   const SizedBox(
                     width: 10,
                   ),
                 ],
               ),
             ),
-          ),
-          Expanded(
-            child: Align(
-              // 此处为关键代码
-              alignment: Alignment.topCenter,
-              child: ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  controller: _scrollController,
-                  shrinkWrap: true,
-                  itemCount: tasks.length,
-                  itemExtent: 50,
-                  itemBuilder: (context, index) {
-                    WtcTask task = tasks[index];
-                    return Slidable(
-                      key: ValueKey(task.id),
-                      endActionPane: ActionPane(
-                        extentRatio: 0.2,
-                        motion: const ScrollMotion(),
-                        children: [
-                          InkWell(
-                            onTap: () {
-                              log("edit");
-                              _showEditTaskDialog(task, () {
-                                wtcTaskService.update(task).then((value) {
-                                  Slidable.of(context)?.close();
-                                  resetData();
-                                });
-                              });
-                            },
-                            child: Container(
-                              width: 35,
-                              height: 40,
-                              decoration: const BoxDecoration(
-                                color: Colors.lightBlue,
-                                borderRadius: BorderRadius.all(Radius.circular(20)),
-                              ),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.edit_note,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(
-                            width: 10,
-                          ),
-                          InkWell(
-                            onTap: () {
-                              log("del");
-                              wtcTaskService.delete(task.id!);
-                              setState(() {
-                                tasks.removeAt(index);
-                              });
-                            },
-                            child: Container(
-                              width: 35,
-                              height: 40,
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.all(Radius.circular(20)),
-                              ),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.delete_forever,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      child: ContentRowWidget(
-                        task: task,
-                        service: wtcTaskService,
-                      ),
-                    );
-                  }),
+            const SizedBox(
+              height: 20,
             ),
-          ),
-          Container(
-            height: 80,
-            margin: const EdgeInsets.only(left: 10, right: 10),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(25),
-              color: Colors.white54,
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x1F000000),
-                  blurRadius: 12,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                const SizedBox(
-                  width: 10,
-                ),
-                Expanded(
-                    child: TextField(
-                      controller: _contentController,
-                      maxLines: 2,
-                      style: const TextStyle(fontSize: 16, color: Colors.black87),
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        hintStyle: TextStyle(color: Color(0xFF666666)),
-                        hintText: "新的任务",
-                      ),
-                    )),
-                const SizedBox(
-                  width: 20,
-                ),
-                InkWell(
-                  onTap: () {
-                    String content = _contentController.text;
-                    if (content.isEmpty) {
-                      return;
-                    }
-
-                    wtcTaskService.queryMaxId().then((maxId) {
-                      int id = maxId + 1;
-                      WtcTask task = WtcTask(
-                          id: id,
-                          content: content,
-                          createdTime: DateTime.now(),
-                          status: TaskStatus.wait,
-                          seq: id,
-                          groupId: curGroup);
-                      wtcTaskService.insert(task);
-                      setState(() {
-                        tasks.insert(0, task);
-                        _contentController.text = "";
-                        FocusScope.of(context).requestFocus(FocusNode());
-                        hrefTop();
-                      });
-                    });
-                  },
-                  child: const Icon(
-                    Icons.add,
-                    size: 50,
-                  ),
-                ),
-                const SizedBox(
-                  width: 10,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(
-            height: 20,
-          ),
-        ],
-      )
-    );
+          ],
+        ));
   }
 
   Future<void> _showAddGroupDialog(Function saveBack) async {
@@ -559,7 +558,7 @@ class EditTaskWidgetSate extends State<EditTaskWidget> {
           },
         ),
         DropdownButton(
-          value: widget.task.groupId ?? 0,
+          value: widget.task.groupId,
           hint: const Text('分组'),
           isExpanded: true,
           onChanged: (newValue) {

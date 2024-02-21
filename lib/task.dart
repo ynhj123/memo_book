@@ -137,13 +137,13 @@ class WtcTaskProvider {
     List<Map<String, Object?>> maps;
     if (status == null && groupId == null) {
       maps = await db.query(tableWtcTask,
-          columns: [columnId, columnContent, columnCreatedTime, columnStatus, columnSeq],
+          columns: [columnId, columnContent, columnCreatedTime, columnStatus, columnSeq, columnGroupId],
           orderBy: "$columnId desc",
           limit: pageSize,
           offset: (pageNum - 1) * pageSize);
     } else if (status != null && groupId == null) {
       maps = await db.query(tableWtcTask,
-          columns: [columnId, columnContent, columnCreatedTime, columnStatus, columnSeq],
+          columns: [columnId, columnContent, columnCreatedTime, columnStatus, columnSeq, columnGroupId],
           where: "$columnStatus = ?",
           whereArgs: [status],
           orderBy: "$columnId desc",
@@ -151,7 +151,7 @@ class WtcTaskProvider {
           offset: (pageNum - 1) * pageSize);
     } else if (status == null && groupId != null) {
       maps = await db.query(tableWtcTask,
-          columns: [columnId, columnContent, columnCreatedTime, columnStatus, columnSeq],
+          columns: [columnId, columnContent, columnCreatedTime, columnStatus, columnSeq, columnGroupId],
           where: "$columnGroupId = ?",
           whereArgs: [groupId],
           orderBy: "$columnId desc",
@@ -159,7 +159,7 @@ class WtcTaskProvider {
           offset: (pageNum - 1) * pageSize);
     } else {
       maps = await db.query(tableWtcTask,
-          columns: [columnId, columnContent, columnCreatedTime, columnStatus, columnSeq],
+          columns: [columnId, columnContent, columnCreatedTime, columnStatus, columnSeq, columnGroupId],
           where: "$columnGroupId = ? and $columnStatus = ?",
           whereArgs: [groupId, status],
           orderBy: "$columnId desc",
