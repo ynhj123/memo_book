@@ -161,19 +161,29 @@ class _MyHomePageState extends State<MyHomePage> {
             GestureDetector(
               onLongPress: () {
                 setState(() {
+                  curGroup = null;
                   editGroup = true;
                 });
               },
-              child: SizedBox(
+              child: Container(
+                color: Colors.lightBlue.shade600,
                 height: 30,
                 child: Row(
                   children: [
                     const SizedBox(
                       width: 5,
                     ),
+                    const Icon(
+                      Icons.grid_view,
+                      size: 18,
+                      color: Colors.white,
+                    ),
                     const Text(
-                      "分组：",
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      "分组",
+                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                    const SizedBox(
+                      width: 10,
                     ),
                     Expanded(
                         child: ListView.separated(
@@ -207,21 +217,15 @@ class _MyHomePageState extends State<MyHomePage> {
                           child: Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(8),
-                              color: Colors.white54,
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0x1F000000),
-                                  blurRadius: 12,
-                                  spreadRadius: 1,
-                                ),
-                              ],
                             ),
                             child: Row(
                               children: [
                                 Text(
                                   group.name ?? "",
                                   style: TextStyle(
-                                      fontSize: 16, color: ((curGroup ?? 0) == group.id) ? Colors.black : Colors.grey),
+                                      fontSize: ((curGroup ?? 0) == group.id) ? 18 : 16,
+                                      color: ((curGroup ?? 0) == group.id) ? Colors.white : Colors.white54,
+                                      fontWeight: ((curGroup ?? 0) == group.id) ? FontWeight.bold : FontWeight.normal),
                                 ),
                                 Visibility(
                                     visible: editGroup && group.id != 0,
@@ -229,7 +233,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                       padding: EdgeInsets.only(left: 5),
                                       child: Text(
                                         "-",
-                                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                        style:
+                                            TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                                       ),
                                     )),
                               ],
@@ -239,7 +244,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       },
                       separatorBuilder: (BuildContext context, int index) {
                         return const SizedBox(
-                          width: 5,
+                          width: 10,
                         );
                       },
                     )),
@@ -253,7 +258,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                   setState(() {});
                                 });
                               },
-                              child: const Icon(Icons.add),
+                              child: const Icon(
+                                Icons.add,
+                                color: Colors.white,
+                              ),
                             ),
                             const SizedBox(
                               width: 8,
@@ -266,7 +274,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                   resetData();
                                 });
                               },
-                              child: const Icon(Icons.save),
+                              child: const Icon(
+                                Icons.save,
+                                color: Colors.white,
+                              ),
                             )
                           ],
                         )),
