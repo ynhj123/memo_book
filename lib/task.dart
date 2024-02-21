@@ -93,6 +93,9 @@ class WtcTaskService {
   }
 
   Future<WtcTask> update(WtcTask task) async {
+    if (task.groupId == 0) {
+      task.groupId = null;
+    }
     await wtcTaskProvider.update(task);
     return task;
   }
