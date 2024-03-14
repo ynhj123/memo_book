@@ -1,21 +1,14 @@
 # memo_book
 
-A new Flutter project.
+memo book是一款记事本app。我们离优秀只差做好每一天的任务。
 
-## Getting Started
+## example
 
-This project is a starting point for a Flutter application.
+![basic1](images/1710427896794.png)
+![group2](images/1710428155880.png)
+![editTask](images/1710428394626.png)
 
-A few resources to get you started if this is your first Flutter project:
+## wait
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
-##wait
-数据持久化
-logo更换
-数据筛选开关
+- 多语言
+- 数据导入 导出
